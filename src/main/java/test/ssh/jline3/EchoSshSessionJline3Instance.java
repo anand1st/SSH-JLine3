@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author anand
  */
-class EchoSshSessionInstance implements Command, Runnable {
+public class EchoSshSessionJline3Instance implements Command, Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EchoSshSessionInstance.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EchoSshSessionJline3Instance.class);
     private InputStream in;
     private OutputStream out;
     private ExitCallback callback;
@@ -59,10 +59,9 @@ class EchoSshSessionInstance implements Command, Runnable {
     public void run() {
         try (Terminal terminal = TerminalBuilder.builder().system(false).streams(in, out).build()) {
             LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
-            terminal.writer().println("Press CTRL-C to exit");
             String line;
             while((line = reader.readLine("localhost>")) != null) {
-                terminal.writer().println(line + '\r');
+                terminal.writer().println(line);
                 terminal.flush();
             }
         } catch (IOException ex) {
