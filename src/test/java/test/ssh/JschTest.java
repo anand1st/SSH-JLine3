@@ -7,6 +7,8 @@ import com.jcraft.jsch.Session;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import org.apache.commons.io.input.CharSequenceInputStream;
@@ -36,7 +38,7 @@ public class JschTest {
     }
 
     @Test
-    public void testJschJline3() throws JSchException, InterruptedException {
+    public void testJschJline3() throws JSchException, IOException {
         JSch jsch = new JSch();
         Session session = jsch.getSession("admin", "localhost", 8022);
         session.setPassword("xxx");
@@ -45,17 +47,22 @@ public class JschTest {
         session.setConfig(config);
         session.connect();
         ChannelShell channel = (ChannelShell) session.openChannel("shell");
-        channel.setInputStream(new CharSequenceInputStream("exit\r", StandardCharsets.UTF_8));
-        OutputStream os = new ByteArrayOutputStream();
-        channel.setOutputStream(os);
+        PipedInputStream pis = new PipedInputStream();
+        PipedOutputStream pos = new PipedOutputStream();
+        channel.setInputStream(new PipedInputStream(pos));
+        channel.setOutputStream(new PipedOutputStream(pis));
         channel.connect();
-        Thread.sleep(2000);
-        System.out.println(os.toString());
-        assertEquals("localhost>exit\nexit\nlocalhost>", os.toString());
+        pos.write("exit\r".getBytes(StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        int i;
+        while ((i = pis.read()) != '\n') {
+            sb.append((char) i);
+        }
+        assertEquals("exit\r", sb.toString());
         channel.disconnect();
         session.disconnect();
     }
-    
+
     @Test
     public void testJschJline2() throws JSchException, InterruptedException {
         JSch jsch = new JSch();
@@ -70,8 +77,7 @@ public class JschTest {
         OutputStream os = new ByteArrayOutputStream();
         channel.setOutputStream(os);
         channel.connect();
-        Thread.sleep(2000);
-        System.out.println(os.toString());
+        Thread.sleep(1000);
         assertEquals("localhost>exit\nexit\nlocalhost>", os.toString());
         channel.disconnect();
         session.disconnect();
